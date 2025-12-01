@@ -24,50 +24,20 @@ app.get('/listings', async (req, res) => {
   }
 });
 
-// POST /listings
-app.post('/listings', async (req, res) => {
-  const { id, title, location, category, price, details } = req.body;
-  
+async function startServer() {
   try {
-    const result = await pool.query(
-      'INSERT INTO listing.properties (id, title, location, category, price, details) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [id, title, location, category, price, details]
-    );
-    res.status(201).json(result.rows[0]);
+    // Test the database connection
+    const client = await pool.connect();
+    console.log('Connected to the database successfully');
+    client.release();
+
+    app.listen(3000, () => {
+      console.log('Listing service running on port 3000');
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Failed to connect to the database:', error);
+    process.exit(1); // Exit the process with an error code
   }
-});
+}
 
-app.listen(3000, () => {
-  console.log('Listing service running on port 3000');
-});
-
-
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
-
-
-// POST /analytics/events
-app.post('/analytics/events', async (req, res) => {
-  const { event_type, details } = req.body;
-  const newId = uuidv4();
-
-  try {
-    const result = await pool.query(
-      'INSERT INTO analytics.events (id, event_type, details) VALUES ($1, , ) RETURNING *',
-      [newId, event_type, details]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.listen(3003, () => { // Another unique port
-  console.log('Analytics service running on port 3003');
-});
-
-
+startServer();
