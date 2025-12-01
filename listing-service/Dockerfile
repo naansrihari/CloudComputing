@@ -1,17 +1,20 @@
+# Use an official Node.js runtime as a parent image
 FROM node:18-alpine
 
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Copy package files
+# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
+
+# Install app dependencies
 RUN npm install
 
-# Copy source code
+# Copy app source
 COPY . .
 
-# Create database schema on startup
-# COPY init-schema.js ./scripts/ 
-
+# The service runs on port 3000
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Command to run the application
+CMD [ "node", "server.js" ]

@@ -1,63 +1,36 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:13
-    container_name: postgres_db
+  listing-service:
+    build: ./listing-service
+    ports:
+      - "3000:3000"
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: plotlisting
+      - DB_HOST=db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_NAME=listingdb
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "node scripts/init-schema.js && node server.js"
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=listingdb
     ports:
       - "5432:5432"
     volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  listing-service:
-    build: ./listing-service
-    container_name: listing_service
-    ports:
-      - "3001:3000" # Expose on local port 3001
-    environment:
-      DB_HOST: postgres
-      DB_USER: admin
-      DB_PASSWORD: password123
-      DB_NAME: plotlisting
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  inquiry-service:
-    build: ./inquiry-service
-    container_name: inquiry_service
-    ports:
-      - "3002:3002"
-    environment:
-      DB_HOST: postgres
-      DB_USER: admin
-      DB_PASSWORD: password123
-      DB_NAME: plotlisting
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  analytics-service:
-    build: ./analytics-service
-    container_name: analytics_service
-    ports:
-      - "3003:3003"
-    environment:
-      DB_HOST: postgres
-      DB_USER: admin
-      DB_PASSWORD: password123
-      DB_NAME: plotlisting
-    depends_on:
-      - postgres
-    restart: unless-stopped
-
-  # Add your frontend-service here once it's ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d listingdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
