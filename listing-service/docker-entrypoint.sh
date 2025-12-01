@@ -16,4 +16,4 @@ done
 node scripts/init-schema.js
 
 # Start the main application
-exec node server.js
+exec "$@"
