@@ -1,0 +1,92 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Events",
+      "type": "stat",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) FROM analytics.events",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Events Over Time",
+      "type": "timeseries",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT created_at AS time, event_type, COUNT(*) AS value\nFROM analytics.events\nGROUP BY time, event_type\nORDER BY time",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Events by Type",
+      "type": "piechart",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT event_type, COUNT(*) AS value FROM analytics.events GROUP BY event_type",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Latest Events",
+      "type": "table",
+      "datasource": "PostgreSQL",
+      "targets": [
+        {
+          "rawSql": "SELECT created_at, event_type, path, element_id FROM analytics.events ORDER BY created_at DESC LIMIT 20",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Analytics Dashboard",
+  "uid": "analytics-dashboard-uid",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL
+    type: postgres
+    # This is the internal Docker network address of your database
+    url: db:5432
+    user: user
+    database: listingdb
+    secureJsonData:
+      password: 'password'
+    jsonData:
+      sslmode: 'disable' # For development, 'require' for production
+      postgresVersion: 14
