@@ -6,7 +6,7 @@ spec:
   entryPoints:
     - web
   routes:
-    # This rule handles Metabase. It has a high priority and uses the stripprefix middleware.
+    # Rule for Metabase with high priority
     - match: PathPrefix(`/metabase`)
       kind: Rule
       priority: 15
@@ -15,16 +15,20 @@ spec:
           port: 3000
       middlewares:
         - name: metabase-stripprefix
+          namespace: default
 
-    # This rule handles Grafana. It has a medium priority.
+    # Rule for Grafana with medium priority
     - match: PathPrefix(`/grafana`)
       kind: Rule
       priority: 10
       services:
         - name: grafana-service
           port: 3000
+      middlewares:
+        - name: grafana-stripprefix
+          namespace: default
 
-    # This is the fallback rule for the frontend. It has the lowest priority.
+    # Fallback rule for the frontend with the lowest priority
     - match: PathPrefix(`/`)
       kind: Rule
       priority: 5
