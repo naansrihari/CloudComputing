@@ -9,7 +9,7 @@ spec:
   - http:
       paths:
       - path: /metabase
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: metabase-service

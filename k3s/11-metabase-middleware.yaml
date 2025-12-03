@@ -5,5 +5,5 @@ metadata:
   namespace: default
 spec:
   stripPrefix:
-    prefixes:
-      - /metabase
+    prefixes: # This should be plural
+      - /metabase # The prefix to strip
