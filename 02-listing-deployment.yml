@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listing-service-deployment
+  namespace: plot-listing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: listing-service
+  template:
+    metadata:
+      labels:
+        app: listing-service
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: postgres:14-alpine
+        command: ['sh', '-c', 
+          "until pg_isready -h db -U user -d listingdb; do echo 'waiting for postgres'; sleep 2; done;"]
+      containers:
+      - name: listing-service
+        # IMPORTANT: Replace with your actual image from your container registry
+        image: your-registry/listing-service:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DB_HOST
+          value: "db"
+        - name: DB_USER
+          value: "user"
+        - name: DB_PASSWORD
+          value: "password"
+        - name: DB_NAME
+          value: "listingdb"
+        # The schema initialization and server start should be handled by the container's entrypoint.
+        # If not, you can use a command like this:
+        # command: ["sh", "-c", "node scripts/init-schema.js && node server.js"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listing-service
+  namespace: plot-listing
+spec:
+  selector:
+    app: listing-service
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
