@@ -29,6 +29,25 @@ metadata:
   namespace: plot-listing
   annotations:
     kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: plot-listing-strip-listing@kubernetescrd,plot-listing-strip-analytics@kubernetescrd,plot-listing-strip-grafana@kubernetescrd,plot-listing-strip-metabase@kubernetescrd
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-metabase
+  namespace: plot-listing
+spec:
+  stripPrefix:
+    prefixes:
+      - /metabase
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: combined-ingress
+  namespace: plot-listing
+  annotations:
+    kubernetes.io/ingress.class: traefik
     # Attach both middlewares to the routers. Traefik will only strip matching prefixes.
     traefik.ingress.kubernetes.io/router.middlewares: plot-listing-strip-listing@kubernetescrd,plot-listing-strip-analytics@kubernetescrd
 spec:
