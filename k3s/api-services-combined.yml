@@ -1,0 +1,152 @@
+# api-services-combined.yml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listing-service-deployment
+  namespace: plot-listing
+  labels: { app: listing-service }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: listing-service } }
+  template:
+    metadata: { labels: { app: listing-service } }
+    spec:
+      containers:
+        - name: listing-service
+          image: plot-listing-listing-service:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 3000, name: http }]
+          env:
+            - name: DB_HOST
+              value: "db"
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: db-credentials, key: POSTGRES_USER } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: db-credentials, key: POSTGRES_PASSWORD } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: db-credentials, key: POSTGRES_DB } }
+          command: [ "sh", "-c", "echo 'Waiting for db...'; until PGPASSWORD=$DB_PASSWORD pg_isready -h $DB_HOST -U $DB_USER -d $DB_NAME; do sleep 1; done; echo 'starting'; if [ -f ./scripts/init-schema.js ]; then node ./scripts/init-schema.js || true; fi; exec node server.js" ]
+          readinessProbe: { tcpSocket: { port: 3000 }, initialDelaySeconds: 5, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 3000 }, initialDelaySeconds: 20, periodSeconds: 20 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listing-service
+  namespace: plot-listing
+spec:
+  selector: { app: listing-service }
+  ports: [{ name: http, port: 3000, targetPort: 3000 }]
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service-deployment
+  namespace: plot-listing
+  labels: { app: analytics-service }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: analytics-service } }
+  template:
+    metadata: { labels: { app: analytics-service } }
+    spec:
+      containers:
+        - name: analytics-service
+          image: plot-listing-analytics-service:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 3001, name: http }]
+          env:
+            - name: DB_HOST
+              value: "db"
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: db-credentials, key: POSTGRES_USER } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: db-credentials, key: POSTGRES_PASSWORD } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: db-credentials, key: POSTGRES_DB } }
+          readinessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 5, periodSeconds: 5 }
+          livenessProbe: { tcpSocket: { port: 3001 }, initialDelaySeconds: 20, periodSeconds: 20 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: plot-listing
+spec:
+  selector: { app: analytics-service }
+  ports: [{ name: http, port: 3001, targetPort: 3001 }]
+  type: ClusterIP
+---
+# Traefik Middlewares (StripPrefix) - remove /api/listing and /api/analytics before forwarding
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-listing-prefix
+  namespace: plot-listing
+spec:
+  stripPrefix:
+    prefixes:
+      - /api/listing
+      - /api/listing/
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-analytics-prefix
+  namespace: plot-listing
+spec:
+  stripPrefix:
+    prefixes:
+      - /api/analytics
+      - /api/analytics/
+---
+# Single combined Ingress which references middlewares
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: combined-ingress
+  namespace: plot-listing
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    # attach the middleware to specific routes via Traefik middleware annotation (router middlewares)
+    # We'll apply router-level middleware using Traefik's rule-based annotation below for each path.
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          # API Listing routes (prefix) -> listing-service with strip
+          - path: /api/listing
+            pathType: Prefix
+            backend:
+              service:
+                name: listing-service
+                port: { number: 3000 }
+          - path: /api/listing/
+            pathType: Prefix
+            backend:
+              service:
+                name: listing-service
+                port: { number: 3000 }
+          # API Analytics routes (prefix) -> analytics-service with strip
+          - path: /api/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service
+                port: { number: 3001 }
+          - path: /api/analytics/
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service
+                port: { number: 3001 }
+          # Frontend fallback
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port: { number: 80 }
