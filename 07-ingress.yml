@@ -1,11 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: plot-listing-ingress
+  name: frontend-ingress
   namespace: plot-listing
-  annotations:
-    # Annotation to strip path prefixes for services that don't expect them
-    traefik.ingress.kubernetes.io/router.middlewares: plot-listing-stripprefix@kubernetescrd
 spec:
   rules:
   - http:
@@ -17,6 +14,18 @@ spec:
             name: frontend
             port:
               number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: plot-listing
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: plot-listing-stripprefix@kubernetescrd
+spec:
+  rules:
+  - http:
+      paths:
       - path: /grafana
         pathType: Prefix
         backend:
@@ -24,6 +33,18 @@ spec:
             name: grafana
             port:
               number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: metabase-ingress
+  namespace: plot-listing
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: plot-listing-stripprefix@kubernetescrd
+spec:
+  rules:
+  - http:
+      paths:
       - path: /metabase
         pathType: Prefix
         backend:
@@ -32,11 +53,10 @@ spec:
             port:
               number: 3000
 ---
-# Middleware to strip the /grafana and /metabase prefixes before forwarding
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: stripprefix
+  name: plot-listing-stripprefix
   namespace: plot-listing
 spec:
   stripPrefix:

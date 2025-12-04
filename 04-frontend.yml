@@ -52,3 +52,16 @@ spec:
       - name: nginx-config
         configMap:
           name: frontend-nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: plot-listing
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
