@@ -43,6 +43,8 @@ spec:
           value: "user"
         - name: MB_DB_PASS
           value: "password"
+        - name: MB_SITE_URL
+          value: "http://16.171.140.122/metabase" # IMPORTANT: Use your actual public IP or domain name
         volumeMounts:
         - name: metabase-storage
           mountPath: /metabase-data
