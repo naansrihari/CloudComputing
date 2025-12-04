@@ -58,7 +58,7 @@ spec:
             - name: GF_SERVER_SERVE_FROM_SUB_PATH
               value: "true"
             - name: GF_SERVER_ROOT_URL
-              value: "/"
+              value: "http://16.171.140.122/grafana/"
           ports:
             - containerPort: 3000
           volumeMounts:
@@ -103,6 +103,7 @@ spec:
   stripPrefix:
     prefixes:
       - /grafana
+    forceSlash: false
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -111,21 +112,12 @@ metadata:
   namespace: plot-listing
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    # attach the middleware we just created (namespaced)
-    traefik.ingress.kubernetes.io/router.middlewares: "plot-listing-strip-grafana@kubernetescrd"
 spec:
   ingressClassName: traefik
   rules:
     - http:
         paths:
           - path: /grafana
-            pathType: Prefix
-            backend:
-              service:
-                name: grafana
-                port:
-                  number: 3000
-          - path: /grafana/
             pathType: Prefix
             backend:
               service:
