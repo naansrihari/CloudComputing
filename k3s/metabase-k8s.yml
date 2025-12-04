@@ -66,6 +66,8 @@ spec:
                   key: MB_DB_PASS
             - name: JAVA_TIMEZONE
               value: "UTC"
+            - name: MB_SITE_URL
+              value: "http://16.171.140.122/metabase"
           livenessProbe:
             httpGet:
               path: /api/health
